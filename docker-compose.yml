@@ -214,8 +214,6 @@ services:
       DASHDOT_SHOW_HOST: 'true'
       DASHDOT_SHOW_DASH_VERSION: 'bottom_right'
       DASHDOT_ACCEPT_OOKLA_EULA: 'true'
-    stdin_open: true  # Equivalent to -i in docker run
-    tty: true         # Equivalent to -t in docker run
   bazarr:
     image: lscr.io/linuxserver/bazarr:development
     container_name: bazarr
