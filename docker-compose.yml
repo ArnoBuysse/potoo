@@ -228,6 +228,13 @@ services:
     ports:
       - 6767:6767
     restart: unless-stopped
+  watchtower:
+    container_name: watchtower
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --cleanup
+    restart: unless-stopped
 #  readarr:
 #    image: lscr.io/linuxserver/readarr:develop
 #    container_name: readarr
