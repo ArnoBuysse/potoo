@@ -17,6 +17,8 @@ services:
       - ${DOCKER}/plex/_data:/config
       - ${SSD}/media4k:/media4k
       - ${HDD}/media:/media
+      - ${SSD}:/data4k
+      - ${ICE}/media:/mediaIce
     restart: unless-stopped
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
@@ -46,28 +48,12 @@ services:
       - ${HDD}:/data
       - ${HDD}/media/tv:/tv
       - ${SSD}:/data4k
+      - ${ICE}:/dataIce
     ports:
       - 8989:8989
     restart: unless-stopped
-  sonarr4k:
-    image: lscr.io/linuxserver/sonarr:develop
-    container_name: sonarr4k
-    environment:
-      - PUID=1027
-      - PGID=100
-      - TZ=Etc/UTC
-      - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:sonarr
-      - TP_THEME=${TP_THEME}
-      - TP_ADDON=sonarr-4k-logo
-    volumes:
-      - ${DOCKER}/sonarr4k/_data:/config
-      - ${SSD}:/data4k
-      - ${SSD}/media4k/tv4k:/tv
-    ports:
-      - 8990:8989
-    restart: unless-stopped
   radarr:
-    image: lscr.io/linuxserver/radarr:develop
+    image: lscr.io/linuxserver/radarr:latest
     container_name: radarr
     environment:
       - PUID=1027
@@ -80,42 +66,10 @@ services:
       - ${HDD}:/data
       - ${HDD}/media/movies:/movies
       - ${SSD}:/data4k
+      - ${ICE}:/dataIce
     ports:
       - 7878:7878
     restart: unless-stopped
-  radarr4k:
-    image: lscr.io/linuxserver/radarr:latest
-    container_name: radarr4k
-    environment:
-      - PUID=1027
-      - PGID=100
-      - TZ=Etc/UTC
-      - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:radarr
-      - TP_THEME=${TP_THEME}
-      - TP_ADDON=radarr-4k-logo
-    volumes:
-      - ${DOCKER}/radarr4k/_data:/config
-      - ${SSD}:/data4k
-      - ${SSD}/media4k/movies4k:/movies
-    ports:
-      - 7879:7878
-    restart: unless-stopped
-#  lidarr:
-#    image: lscr.io/linuxserver/lidarr:develop
-#    container_name: lidarr
-#    environment:
-#      - PUID=1027
-#      - PGID=100
-#      - TZ=Etc/UTC
-#      - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:lidarr
-#      - TP_THEME=${TP_THEME}
-#    volumes:
-#      - ${DOCKER}/lidarr/_data:/config
-#      - ${SSD}:/data4k
-#      - ${SSD}/media4k/music4k:/music
-#    ports:
-#      - 8686:8686
-#    restart: unless-stopped
   sabnzbd:
     image: lscr.io/linuxserver/sabnzbd:latest
     container_name: sabnzbd
@@ -129,6 +83,7 @@ services:
       - ${DOCKER}/sabnzbd/_data:/config
       - ${HDD}/usenet:/data/usenet/
       - ${SSD}/usenet4k:/data4k/usenet4k/
+      - ${SSD}/media4k:/media4k
     ports:
       - 8081:8080
     restart: unless-stopped
@@ -151,22 +106,22 @@ services:
       - 6881:6881
       - 6881:6881/udp
     restart: unless-stopped
-#  tautulli:
-#    image: lscr.io/linuxserver/tautulli:latest
-#    container_name: tautulli
-#    environment:
-#      - PUID=1027
-#      - PGID=100
-#      - TZ=Etc/UTC
-#      - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:tautulli
-#      - TP_THEME=${TP_THEME}
-#    volumes:
-#      - ${DOCKER}/tautulli/_data:/config
-#    ports:
-#      - 8181:8181
-#    restart: unless-stopped
+  tautulli:
+    image: lscr.io/linuxserver/tautulli:latest
+    container_name: tautulli
+    environment:
+      - PUID=1027
+      - PGID=100
+      - TZ=Etc/UTC
+      - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:tautulli
+      - TP_THEME=${TP_THEME}
+    volumes:
+      - ${DOCKER}/tautulli/_data:/config
+    ports:
+      - 8181:8181
+    restart: unless-stopped
   overseerr:
-    image: lscr.io/linuxserver/overseerr:develop
+    image: lscr.io/linuxserver/overseerr:latest
     container_name: overseerr
     environment:
       - PUID=1027
@@ -201,33 +156,6 @@ services:
       - ${DOCKER}/notifiarr/_data:/config
       - ${DOCKER}/notifiarr/utmp:/var/run/utmp
       - ${DOCKER}/notifiarr/machine-id:/etc/machine-id
-  dash:
-    container_name: dash
-    image: mauricenino/dashdot:latest
-    restart: unless-stopped
-    privileged: true
-    ports:
-      - '3001:3001'
-    volumes:
-      - /:/mnt/host:ro
-    environment:
-      DASHDOT_SHOW_HOST: 'true'
-      DASHDOT_SHOW_DASH_VERSION: 'bottom_right'
-      DASHDOT_ACCEPT_OOKLA_EULA: 'true'
-  bazarr:
-    image: lscr.io/linuxserver/bazarr:development
-    container_name: bazarr
-    environment:
-      - PUID=1027
-      - PGID=100
-      - TZ=Etc/UTC
-    volumes:
-      - ${DOCKER}/bazarr/_data:/config
-      - ${HDD}:/data
-      - ${SSD}:/data4k
-    ports:
-      - 6767:6767
-    restart: unless-stopped
   watchtower:
     container_name: watchtower
     image: containrrr/watchtower
@@ -235,28 +163,37 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     command: --cleanup
     restart: unless-stopped
-#  readarr:
-#    image: lscr.io/linuxserver/readarr:develop
-#    container_name: readarr
+#  sonarr4k:
+#    image: lscr.io/linuxserver/sonarr:develop
+#    container_name: sonarr4k
 #    environment:
 #      - PUID=1027
 #      - PGID=100
-#      - TZ=Europe/London
+#      - TZ=Etc/UTC
+#      - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:sonarr
+#      - TP_THEME=${TP_THEME}
+#      - TP_ADDON=sonarr-4k-logo
 #    volumes:
-#      - ${DOCKER}/readarr/_data:/config
+#      - ${DOCKER}/sonarr4k/_data:/config
 #      - ${SSD}:/data4k
-#      - ${SSD}/media4k/books4k:/books
+#      - ${SSD}/media4k/tv4k:/tv
 #    ports:
-#      - 8787:8787
+#      - 8990:8989
 #    restart: unless-stopped
-#  flaresolverr:
-#    image: ghcr.io/flaresolverr/flaresolverr:latest
-#    container_name: flaresolverr
+#  radarr4k:
+#    image: lscr.io/linuxserver/radarr:latest
+#    container_name: radarr4k
 #    environment:
-#      - LOG_LEVEL=${LOG_LEVEL:-info}
-#      - LOG_HTML=${LOG_HTML:-false}
-#      - CAPTCHA_SOLVER=${CAPTCHA_SOLVER:-none}
-#      - TZ=Europe/London
+#      - PUID=1027
+#      - PGID=100
+#      - TZ=Etc/UTC
+#      - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:radarr
+#      - TP_THEME=${TP_THEME}
+#      - TP_ADDON=radarr-4k-logo
+#    volumes:
+#      - ${DOCKER}/radarr4k/_data:/config
+#      - ${SSD}:/data4k
+#      - ${SSD}/media4k/movies4k:/movies
 #    ports:
-#      - "${PORT:-8191}:8191"
-#    restart: unless-stopped 
+#      - 7879:7878
+#    restart: unless-stopped
