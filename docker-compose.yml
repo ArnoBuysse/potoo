@@ -123,19 +123,24 @@ services:
     ports:
       - 8181:8181
     restart: unless-stopped
-  overseerr:
-    image: lscr.io/linuxserver/overseerr:latest
-    container_name: overseerr
+  seerr:
+    image: ghcr.io/seerr-team/seerr:latest
+    init: true
+    container_name: seerr
     environment:
-      - PUID=1027
-      - PGID=100
-      - TZ=Etc/UTC
-      - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:overseerr
-      - TP_THEME=${TP_THEME}
-    volumes:
-      - ${DOCKER}/overseerr/_data:/config
+      - LOG_LEVEL=debug
+      - TZ=Europe/Zurich
+      - PORT=5055 #optional
     ports:
       - 5055:5055
+    volumes:
+      - ${DOCKER}/seerr/_data:/app/config
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/status || exit 1
+      start_period: 20s
+      timeout: 3s
+      interval: 15s
+      retries: 3
     restart: unless-stopped
   homarr:
     container_name: homarr
@@ -166,37 +171,65 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     command: --cleanup
     restart: unless-stopped
-#  sonarr4k:
-#    image: lscr.io/linuxserver/sonarr:develop
-#    container_name: sonarr4k
-#    environment:
-#      - PUID=1027
-#      - PGID=100
-#      - TZ=Etc/UTC
-#      - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:sonarr
-#      - TP_THEME=${TP_THEME}
-#      - TP_ADDON=sonarr-4k-logo
-#    volumes:
-#      - ${DOCKER}/sonarr4k/_data:/config
-#      - ${SSD}:/data4k
-#      - ${SSD}/media4k/tv4k:/tv
-#    ports:
-#      - 8990:8989
-#    restart: unless-stopped
-#  radarr4k:
-#    image: lscr.io/linuxserver/radarr:latest
-#    container_name: radarr4k
-#    environment:
-#      - PUID=1027
-#      - PGID=100
-#      - TZ=Etc/UTC
-#      - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:radarr
-#      - TP_THEME=${TP_THEME}
-#      - TP_ADDON=radarr-4k-logo
-#    volumes:
-#      - ${DOCKER}/radarr4k/_data:/config
-#      - ${SSD}:/data4k
-#      - ${SSD}/media4k/movies4k:/movies
-#    ports:
-#      - 7879:7878
-#    restart: unless-stopped
+  sonarr4k:
+    image: lscr.io/linuxserver/sonarr:develop
+    container_name: sonarr4k
+    environment:
+      - PUID=1027
+      - PGID=100
+      - TZ=Etc/UTC
+      - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:sonarr
+      - TP_THEME=${TP_THEME}
+      - TP_ADDON=sonarr-4k-logo
+    volumes:
+      - ${DOCKER}/sonarr4k/_data:/config
+      - ${SSD}:/data4k
+      - ${SSD}/media4k/tv4k:/tv
+    ports:
+      - 8990:8989
+    restart: unless-stopped
+  radarr4k:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr4k
+    environment:
+      - PUID=1027
+      - PGID=100
+      - TZ=Etc/UTC
+      - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:radarr
+      - TP_THEME=${TP_THEME}
+      - TP_ADDON=radarr-4k-logo
+    volumes:
+      - ${DOCKER}/radarr4k/_data:/config
+      - ${SSD}:/data4k
+      - ${SSD}/media4k/movies4k:/movies
+    ports:
+      - 7879:7878
+    restart: unless-stopped
+  wg-easy:
+    image: weejewel/wg-easy
+    container_name: wg-easy
+    environment:
+      - WG_HOST=nas.potoo.ch
+      - PASSWORD=UkMVUnhig@k*xUK9X4M2
+      #- WG_PORT=51820
+      #- WG_DEFAULT_ADDRESS=10.8.0.1
+      - WG_DEFAULT_DNS=1.1.1.1
+      #- WG_MTU=1240
+      - WG_PERSISTENT_KEEPALIVE=25
+      - WG_ALLOWED_IPS=0.0.0.0/0
+      #- WG_PRE_UP=/etc/wireguard/pre-up.txt
+      #- WG_POST_UP=/etc/wireguard/post-up.txt
+      #- WG_PRE_DOWN=/etc/wireguard/pre-down.txt
+      #- WG_POST_DOWN=/etc/wireguard/post-down.txt
+    volumes:
+      - ${DOCKER}/wg-easy/_data:/etc/wireguard
+    ports:
+      - "51820:51820/udp"
+      - "51821:51821/tcp"
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      net.ipv4.ip_forward: 1
+      net.ipv4.conf.all.src_valid_mark: 1
